@@ -1,0 +1,2593 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link rel="icon" type="image/png" href="icon.jpg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Билдостроитель персонажа</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-accent: #1a1a25;
+            --bg-input: #08080d;
+            --accent: #911b40;
+            --accent-glow: rgba(255, 42, 109, 0.6);
+            --cyan: #f1bebc;
+            --cyan-glow: rgba(230, 49, 49, 0.5);
+            --yellow: #f9f002;
+            --text: #d1f7ff;
+            --text-muted: #8a5a5a;
+            --success: #56ecae;
+            --warning: #f9f002;
+            --border: rgba(243, 143, 210, 0.3);
+            --matrix: #dfb1c2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+            background-image: 
+                linear-gradient(0deg, transparent 24%, rgba(232, 5, 35, 0.03) 25%, rgba(5, 217, 232, 0.03) 26%, transparent 27%, transparent 74%, rgba(5, 217, 232, 0.03) 75%, rgba(5, 217, 232, 0.03) 76%, transparent 77%, transparent),
+                linear-gradient(90deg, transparent 24%, rgba(5, 217, 232, 0.03) 25%, rgba(5, 217, 232, 0.03) 26%, transparent 27%, transparent 74%, rgba(5, 217, 232, 0.03) 75%, rgba(5, 217, 232, 0.03) 76%, transparent 77%, transparent);
+            background-size: 50px 50px;
+        }
+
+        /* Слой с фоновой картинкой */
+        .background-overlay {
+            position: fixed;
+            /* Делаем отступы по краям, чтобы видеть старый фон */
+            top: 20px;
+            bottom: 20px;
+            left: 150px;
+            right: 150px;
+            
+            background: url('fon.jpeg') no-repeat center;
+            background-size: cover; /* Заполнит пространство 1440x1089 */
+            opacity: 0.25; /* Прозрачность 25% */
+            z-index: -1; /* Уходит под все элементы */
+            pointer-events: none; /* Не мешает кликам */
+            
+            /* Киберпанк рамка для самого фона */
+            border: 1px solid rgba(5, 217, 232, 0.2);
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+            
+            /* Скошенные углы как у карточек */
+            clip-path: polygon(
+                0 30px, 30px 0, calc(100% - 30px) 0, 100% 30px,
+                100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px)
+            );
+        }
+
+        /* На мобилках убираем отступы, чтобы не тратить место */
+        @media (max-width: 1100px) {
+            .background-overlay {
+                top: 0; bottom: 0; left: 0; right: 0;
+                clip-path: none;
+            }
+        }
+
+        /* Заголовок с глитч-эффектом */
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--cyan);
+            text-shadow: 
+                0 0 10px var(--cyan-glow),
+                0 0 20px var(--cyan-glow),
+                0 0 40px var(--cyan-glow),
+                0 0 80px var(--cyan-glow),
+                3px 3px 0 var(--accent),
+                -1px -1px 0 rgba(255,255,255,0.2);
+            position: relative;
+            animation: flicker 4s infinite, floatTitle 6s ease-in-out infinite;
+        }
+
+        @keyframes floatTitle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        @keyframes flicker {
+            0%, 92%, 94%, 96%, 100% { opacity: 1; }
+            93% { opacity: 0.8; text-shadow: 0 0 10px var(--cyan-glow), -3px 0 var(--accent), 3px 0 var(--cyan); }
+            95% { opacity: 0.9; text-shadow: 0 0 10px var(--cyan-glow), 2px 0 var(--accent), -2px 0 var(--cyan); }
+        }
+
+        /* Карточки с киберпанк углами - PREMIUM */
+        .card {
+            background: 
+                linear-gradient(135deg, rgba(255, 42, 109, 0.03) 0%, transparent 50%, rgba(5, 217, 232, 0.03) 100%),
+                var(--bg-card);
+            padding: 25px;
+            margin-bottom: 25px;
+            position: relative;
+            clip-path: polygon(
+                0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px,
+                100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px)
+            );
+            border: 1px solid var(--border);
+            box-shadow: 
+                0 0 30px rgba(0,0,0,0.6),
+                0 0 60px rgba(145, 27, 64, 0.1),
+                inset 0 0 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 
+                0 0 40px rgba(0,0,0,0.7),
+                0 0 80px rgba(145, 27, 64, 0.2),
+                inset 0 0 40px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            border-color: rgba(243, 143, 210, 0.5);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan), var(--accent), transparent);
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--cyan), transparent);
+            animation: borderGlow 3s ease-in-out infinite reverse;
+        }
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .card h2 {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--cyan);
+            border-bottom: none;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            text-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .card h2::before {
+            content: '//';
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent-glow);
+            animation: glitchText 4s infinite;
+        }
+
+        .card h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, var(--accent), var(--border) 50%, transparent);
+        }
+
+        @keyframes glitchText {
+            0%, 90%, 100% { opacity: 1; transform: translateX(0); }
+            92% { opacity: 0.8; transform: translateX(-2px); }
+            94% { opacity: 1; transform: translateX(2px); }
+            96% { opacity: 0.9; transform: translateX(-1px); }
+        }
+
+        /* Иконки вместо эмодзи */
+        .icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            background: var(--cyan);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        /* Tooltip */
+        .has-tooltip {
+            cursor: help;
+            border-bottom: 1px dashed var(--cyan);
+            transition: color 0.2s;
+        }
+
+        .has-tooltip:hover {
+            color: var(--cyan);
+        }
+
+        .tooltip {
+            position: fixed;
+            visibility: hidden;
+            opacity: 0;
+            background: var(--bg-dark);
+            border: 1px solid var(--cyan);
+            color: var(--text);
+            padding: 10px 15px;
+            font-size: 0.85em;
+            white-space: nowrap;
+            z-index: 10000;
+            transition: opacity 0.2s;
+            box-shadow: 
+                0 0 20px rgba(240, 122, 122, 0.3),
+                inset 0 0 20px rgba(5, 217, 232, 0.05);
+            pointer-events: none;
+        }
+
+        .tooltip.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Ряды статов */
+        .stat-row, .skill-row {
+            display: grid;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(5, 217, 232, 0.1);
+            transition: background 0.2s;
+        }
+
+        .stat-row:hover, .skill-row:hover {
+            background: rgba(5, 217, 232, 0.03);
+        }
+
+        .stat-row {
+            grid-template-columns: 150px 1fr 1fr;
+        }
+
+        .skill-row {
+            grid-template-columns: 150px 1fr 1fr auto;
+        }
+
+        .stat-row:last-child, .skill-row:last-child {
+            border-bottom: none;
+        }
+
+        .stat-name {
+            font-weight: 700;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Контролы */
+        .value-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .value-control .label {
+            font-size: 0.75em;
+            color: var(--text-muted);
+            min-width: 70px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .value-control button {
+            width: auto;
+            min-width: 32px;
+            padding: 0 8px;
+            height: 32px;
+            border: 1px solid var(--accent);
+            background: transparent;
+            color: var(--accent);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+        }
+
+        .value-control button:hover:not(:disabled) {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .value-control button:disabled {
+            border-color: #333;
+            color: #333;
+            cursor: not-allowed;
+        }
+
+        .value-display {
+            min-width: 40px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--success);
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px rgba(1, 255, 188, 0.5);
+        }
+
+        .percent-display {
+            min-width: 55px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 600;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .percent-positive { 
+            color: var(--success); 
+            text-shadow: 0 0 8px rgba(1, 255, 188, 0.4);
+        }
+        .percent-negative { 
+            color: var(--accent); 
+            text-shadow: 0 0 8px var(--accent-glow);
+        }
+        .percent-zero { 
+            color: var(--text-muted); 
+        }
+
+        /* Навыки */
+        .skill-formula {
+            font-size: 0.7em;
+            color: var(--yellow);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .skill-total {
+            background: linear-gradient(135deg, rgba(255, 42, 109, 0.1), rgba(5, 217, 232, 0.1));
+            border: 1px solid var(--border);
+            padding: 12px 18px;
+            text-align: center;
+            min-width: 110px;
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+        }
+
+        .skill-total .total-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--yellow);
+            text-shadow: 0 0 10px rgba(249, 240, 2, 0.5);
+        }
+
+        .skill-total .total-label {
+            font-size: 0.65em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 3px;
+        }
+
+        /* Info box */
+        .info-box {
+            background: rgba(145, 130, 104, 0.05);
+            border-left: 3px solid var(--cyan);
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: var(--text-muted);
+            position: relative;
+        }
+
+        .info-box::before {
+            content: 'INFO';
+            position: absolute;
+            top: -8px;
+            left: 15px;
+            background: var(--bg-card);
+            padding: 0 8px;
+            font-size: 0.7em;
+            color: var(--cyan);
+            letter-spacing: 2px;
+        }
+
+        /* Экспорт */
+        .export-area {
+            width: 100%;
+            height: 200px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 15px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+            resize: vertical;
+            clip-path: polygon(
+                0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px,
+                100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px)
+            );
+        }
+
+        .export-area:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px var(--cyan-glow);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+            color: var(--cyan);
+            border: 2px solid var(--cyan);
+            padding: 12px 25px;
+            font-size: 0.85em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 0 10px rgba(241, 190, 188, 0.2),
+                inset 0 0 20px rgba(241, 190, 188, 0.05);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(241, 190, 188, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, var(--cyan) 0%, transparent 70%);
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+            opacity: 0.3;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, var(--cyan) 0%, rgba(241, 190, 188, 0.8) 100%);
+            color: var(--bg-dark);
+            box-shadow: 
+                0 0 40px var(--cyan-glow),
+                0 0 80px rgba(241, 190, 188, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+            text-shadow: 0 0 10px var(--bg-dark);
+        }
+
+        .btn-secondary {
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 
+                0 0 10px rgba(145, 27, 64, 0.2),
+                inset 0 0 20px rgba(145, 27, 64, 0.05);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, var(--accent) 0%, rgba(145, 27, 64, 0.8) 100%);
+            box-shadow: 
+                0 0 40px var(--accent-glow),
+                0 0 80px rgba(145, 27, 64, 0.3),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Сканлайны поверх всего */
+       /* Агрессивные сканлайны */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.15) 2px,
+                rgba(0, 0, 0, 0.15) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+            animation: scanlineFlicker 0.1s infinite;
+        }
+
+        @keyframes scanlineFlicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+        }
+
+        /* Системные надписи в углах */
+        .system-label {
+            position: fixed;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65em;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--cyan);
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 100;
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .system-label::before {
+            content: '// ';
+            color: var(--accent);
+        }
+
+        .system-label.top-left {
+            top: 15px;
+            left: 20px;
+        }
+
+        .system-label.top-right {
+            top: 15px;
+            right: 20px;
+        }
+
+        .system-label.bottom-left {
+            bottom: 15px;
+            left: 20px;
+        }
+
+        .system-label.bottom-right {
+            bottom: 60px;
+            right: 20px;
+        }
+
+        /* Мигающий статус */
+        .system-label .status {
+            display: inline-block;
+            animation: statusBlink 2s infinite;
+        }
+
+        @keyframes statusBlink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0.3; }
+        }
+
+        /* Контейнер для бегущего кода */
+        .matrix-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            opacity: 0.25;
+        }
+
+        .matrix-column {
+            position: absolute;
+            top: -100%;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.2;
+            color: var(--matrix);
+            text-shadow: 0 0 10px var(--accent-glow);
+            writing-mode: vertical-rl;
+            white-space: nowrap;
+            animation: matrixFall linear infinite;
+        }
+
+        @keyframes matrixFall {
+            0% {
+                transform: translateY(-100%);
+            }
+            100% {
+                transform: translateY(calc(100vh + 100%));
+            }
+        }
+
+        /* Декоративные уголки HUD */
+        .hud-corner {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            pointer-events: none;
+            z-index: 100;
+            opacity: 0.3;
+        }
+
+        .hud-corner::before,
+        .hud-corner::after {
+            content: '';
+            position: absolute;
+            background: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .hud-corner.top-left {
+            top: 10px;
+            left: 10px;
+        }
+
+        .hud-corner.top-left::before {
+            top: 0;
+            left: 0;
+            width: 30px;
+            height: 2px;
+        }
+
+        .hud-corner.top-left::after {
+            top: 0;
+            left: 0;
+            width: 2px;
+            height: 30px;
+        }
+
+        .hud-corner.top-right {
+            top: 10px;
+            right: 10px;
+        }
+
+        .hud-corner.top-right::before {
+            top: 0;
+            right: 0;
+            width: 30px;
+            height: 2px;
+        }
+
+        .hud-corner.top-right::after {
+            top: 0;
+            right: 0;
+            width: 2px;
+            height: 30px;
+        }
+
+        .hud-corner.bottom-left {
+            bottom: 10px;
+            left: 10px;
+        }
+
+        .hud-corner.bottom-left::before {
+            bottom: 0;
+            left: 0;
+            width: 30px;
+            height: 2px;
+        }
+
+        .hud-corner.bottom-left::after {
+            bottom: 0;
+            left: 0;
+            width: 2px;
+            height: 30px;
+        }
+
+        .hud-corner.bottom-right {
+            bottom: 10px;
+            right: 10px;
+        }
+
+        .hud-corner.bottom-right::before {
+            bottom: 0;
+            right: 0;
+            width: 30px;
+            height: 2px;
+        }
+
+        .hud-corner.bottom-right::after {
+            bottom: 0;
+            right: 0;
+            width: 2px;
+            height: 30px;
+        }
+
+        /* Музыкальный плеер */
+        .music-player {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--cyan);
+            padding: 15px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+            box-shadow: 0 0 25px var(--cyan-glow);
+            transition: all 0.3s;
+        }
+
+        .player-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 180px;
+        }
+
+        .track-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75em;
+            color: var(--yellow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-controls {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .player-btn {
+            width: 35px;
+            height: 30px;
+            background: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-size: 0.7em;
+            cursor: pointer;
+            transition: all 0.2s;
+            clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+        }
+
+        .player-btn:hover {
+            background: var(--accent);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .player-btn.play-btn {
+            width: 45px;
+            border-color: var(--cyan);
+            color: var(--cyan);
+        }
+
+        .player-btn.play-btn:hover {
+            background: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .volume-icon {
+            font-size: 0.9em;
+            filter: grayscale(1);
+        }
+
+        .volume-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            cursor: pointer;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--cyan);
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            cursor: pointer;
+            box-shadow: 0 0 8px var(--cyan-glow);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: var(--cyan);
+            border: none;
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+            cursor: pointer;
+        }
+
+        .volume-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.65em;
+            color: var(--text-muted);
+            min-width: 35px;
+        }
+
+        /* Атакующие навыки */
+        .attack-section {
+            margin-bottom: 25px;
+        }
+
+        .attack-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-label {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8em;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 3px solid var(--accent);
+        }
+
+        .style-group {
+            background: rgba(255, 42, 109, 0.05);
+            border: 1px solid rgba(255, 42, 109, 0.2);
+            padding: 15px;
+            margin-bottom: 15px;
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+        }
+
+        .style-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .style-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 42, 109, 0.2);
+        }
+
+        .style-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1em;
+            color: var(--yellow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .style-attr {
+            font-size: 0.75em;
+            color: var(--text-muted);
+        }
+
+        .substyle-row {
+            display: grid;
+            grid-template-columns: 120px 1fr 1fr auto;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .substyle-row:last-child {
+            border-bottom: none;
+        }
+
+        .substyle-name {
+            font-size: 0.9em;
+            color: var(--text);
+        }
+
+        .substyle-name span {
+            color: var(--text-muted);
+            font-size: 0.85em;
+        }
+
+        .style-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 0;
+        }
+
+        .style-totals {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Основной лейаут с боковой панелью */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr 180px;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Боковая панель */
+        .sidebar {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+
+        .stats-panel {
+        background: 
+            linear-gradient(135deg, rgba(255, 42, 109, 0.03) 0%, transparent 50%, rgba(5, 217, 232, 0.03) 100%),
+            var(--bg-card);
+        padding: 20px;
+        clip-path: polygon(
+            0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px,
+            100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px)
+        );
+        border: 1px solid var(--border);
+        box-shadow: 
+            0 0 20px rgba(0,0,0,0.5),
+            inset 0 0 30px rgba(232, 5, 5, 0.03);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .stats-panel::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+        opacity: 0.5;
+        transition: opacity 0.3s;
+    }
+
+    .stats-panel::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        opacity: 0.5;
+        transition: opacity 0.3s;
+    }
+
+    .stats-panel:hover {
+        border-color: rgba(243, 143, 210, 0.5);
+        box-shadow: 
+            0 0 30px rgba(0,0,0,0.6),
+            0 0 40px rgba(145, 27, 64, 0.15),
+            inset 0 0 40px rgba(232, 5, 5, 0.05);
+    }
+
+    .stats-panel:hover::before,
+    .stats-panel:hover::after {
+        opacity: 1;
+    }
+
+    .stats-panel h2 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1em;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--cyan);
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border);
+        text-shadow: 0 0 15px var(--cyan-glow);
+        position: relative;
+    }
+
+    .stats-panel h2::before {
+        content: '//';
+        color: var(--accent);
+        margin-right: 10px;
+        text-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    /* Показатели с hover эффектом */
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        transition: all 0.2s ease;
+        position: relative;
+        margin: 0 -8px;
+    }
+
+    .stat-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: transparent;
+        transition: all 0.2s;
+    }
+
+    .stat-item:hover {
+        background: linear-gradient(90deg, rgba(145, 27, 64, 0.1), transparent);
+    }
+
+    .stat-item:hover::before {
+        background: var(--accent);
+        box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+
+    .stat-item-value {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.4em;
+        font-weight: 700;
+        color: var(--success);
+        text-shadow: 0 0 10px rgba(1, 255, 188, 0.4);
+        transition: all 0.2s;
+    }
+
+    /* Цветовые варианты */
+        .stat-item-value.health {
+            color: #ff4757;
+            text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+        }
+
+        .stat-item-value.energy {
+            color: var(--yellow);
+            text-shadow: 0 0 10px rgba(249, 240, 2, 0.4);
+        }
+
+        .stat-item-value.speed {
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .stat-item-value.armor {
+            color: #a0a0a0;
+            text-shadow: 0 0 10px rgba(160, 160, 160, 0.4);
+        }
+
+        .stat-item-value.psy {
+            color: #9b6aeb;
+            text-shadow: 0 0 10px rgba(127, 95, 243, 0.4);
+        }
+
+        .stat-item-value.initiative {
+            color: #ff9500;
+            text-shadow: 0 0 10px rgba(255, 149, 0, 0.5);
+        }
+
+        .stat-item-value.perception {
+            color: #56ecae;
+            text-shadow: 0 0 10px rgba(86, 236, 174, 0.5);
+        }
+
+        .stat-item-value.stealth {
+            color: #ff6b9d;
+            text-shadow: 0 0 10px rgba(255, 107, 157, 0.5);
+        }
+
+    .stat-item:hover .stat-item-value {
+        transform: scale(1.1);
+        text-shadow: 0 0 15px rgba(1, 255, 188, 0.6);
+    }
+
+    /* Разделитель с анимацией */
+    .stats-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        margin: 15px 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stats-divider::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+        animation: dividerSweep 3s ease-in-out infinite;
+    }
+
+    @keyframes dividerSweep {
+        0%, 100% { left: -50%; }
+        50% { left: 100%; }
+    }
+
+        /* Основной контент */
+        .main-content {
+            min-width: 0;
+        }
+
+        /* Адаптив */
+        @media (max-width: 1000px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: static;
+            }
+        }
+        
+        /* Переключатель специализаций */
+        .spec-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .spec-btn {
+            background: 
+                linear-gradient(135deg, rgba(255,255,255,0.02) 0%, transparent 100%),
+                var(--bg-card);
+            border: 2px solid var(--border);
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .spec-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(241, 190, 188, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .spec-btn:hover::before {
+            left: 100%;
+        }
+
+        .spec-btn:hover {
+            border-color: var(--cyan);
+            box-shadow: 
+                0 0 20px var(--cyan-glow),
+                inset 0 0 20px rgba(241, 190, 188, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .spec-btn.active {
+            border-color: var(--accent);
+            background: 
+                linear-gradient(135deg, rgba(255, 42, 109, 0.2) 0%, rgba(145, 27, 64, 0.1) 100%),
+                var(--bg-card);
+            box-shadow: 
+                0 0 30px var(--accent-glow),
+                inset 0 0 30px rgba(145, 27, 64, 0.1);
+        }
+
+        .spec-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .spec-name {
+            display: block;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9em;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            transition: all 0.3s;
+        }
+
+        .spec-btn:hover .spec-name {
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .spec-btn.active .spec-name {
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .spec-values {
+            display: block;
+            font-size: 1em;
+            color: var(--text);
+            opacity: 0.7;
+            transition: all 0.3s;
+        }
+
+        .spec-btn:hover .spec-values {
+            opacity: 1;
+            color: var(--cyan);
+        }
+
+        .spec-btn.active .spec-values {
+            opacity: 1;
+            color: var(--text);
+        }
+
+        /* Отображение очков */
+        .points-display {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 25px;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            clip-path: polygon(20px 0, 100% 0, calc(100% - 20px) 100%, 0 100%);
+        }
+
+        .points-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .points-label {
+            font-size: 0.85em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .points-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4em;
+            font-weight: 700;
+            color: var(--success);
+            text-shadow: 0 0 10px rgba(1, 255, 188, 0.5);
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .points-value.warning {
+            color: var(--warning);
+        }
+
+        .points-value.danger {
+            color: var(--accent);
+        }
+
+        /* Правый сайдбар (очки) */
+        .sidebar-right {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+
+        .points-panel {
+        background: 
+            linear-gradient(135deg, rgba(145, 27, 64, 0.1) 0%, transparent 50%, rgba(145, 27, 64, 0.05) 100%),
+            var(--bg-card);
+        padding: 15px;
+        clip-path: polygon(
+            0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px,
+            100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px)
+        );
+        border: 1px solid var(--accent);
+        box-shadow: 
+            0 0 20px var(--accent-glow),
+            inset 0 0 30px rgba(145, 27, 64, 0.05);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .points-panel::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        animation: pointsGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes pointsGlow {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+    }
+
+    .points-panel:hover {
+        box-shadow: 
+            0 0 40px var(--accent-glow),
+            0 0 60px rgba(145, 27, 64, 0.2),
+            inset 0 0 40px rgba(145, 27, 64, 0.08);
+        border-color: rgba(255, 42, 109, 0.8);
+    }
+
+    .points-panel h3 {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--accent);
+        margin-bottom: 15px;
+        text-align: center;
+        text-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .points-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 5px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        transition: all 0.2s ease;
+        margin: 0 -5px;
+    }
+
+    .points-row:hover {
+        background: rgba(145, 27, 64, 0.1);
+    }
+
+    .points-row:last-child {
+        border-bottom: none;
+    }
+
+    .points-row-value {
+        font-family: 'Orbitron', sans-serif;
+        font-size: 1.3em;
+        font-weight: 700;
+        color: var(--success);
+        text-shadow: 0 0 10px rgba(1, 255, 188, 0.5);
+        transition: all 0.2s;
+    }
+
+    .points-row:hover .points-row-value {
+        transform: scale(1.1);
+    }
+
+        /* Танцующая гифка */
+        .dance-bg {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 400px;
+            height: 230px;
+            background: url('dance.gif') no-repeat center;
+            background-size: contain;
+            opacity: 0;
+            transition: opacity 2.5s ease, box-shadow 0.3s ease;
+            pointer-events: none;
+            z-index: 1;
+            border: 2px solid var(--cyan);
+            box-shadow: 
+                0 0 20px var(--cyan-glow),
+                inset 0 0 30px rgba(221, 122, 122, 0.1);
+            clip-path: polygon(
+                0 15px, 15px 0, calc(100% - 15px) 0, 100% 15px,
+                100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px)
+            );
+        }
+
+        .dance-bg.playing {
+            opacity: 0.75;
+            animation: danceGlow 0.03s ease-in-out infinite;
+        }
+
+        @keyframes danceGlow {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 20px var(--cyan-glow),
+                    inset 0 0 30px rgba(245, 144, 144, 0.3);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 40px var(--cyan-glow),
+                    0 0 60px rgba(230, 49, 49, 0.2),
+                    inset 0 0 40px rgba(138, 52, 52, 0.15);
+            }
+        }
+
+        /* Сдвигаем при наличии плеера */
+        @media (min-width: 1400px) {
+            .dance-bg {
+                right: 10px; /* Отступ от музыкального плеера */
+                bottom: 150px;
+            }
+        }
+
+        /* На маленьких экранах скрываем */
+        @media (max-width: 1100px) {
+            .dance-bg {
+                display: none;
+            }
+        }
+
+        /* Обертка заголовка */
+        .title-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .title-wrapper h1 {
+            margin-bottom: 0;
+        }
+
+        /* Иконка с киберпанк рамкой */
+        .title-icon {
+            width: 80px;
+            height: 80px;
+            border: 2px solid var(--cyan);
+            box-shadow: 
+                0 0 15px var(--cyan-glow),
+                inset 0 0 20px rgba(5, 217, 232, 0.1);
+            clip-path: polygon(
+                0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px,
+                100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px)
+            );
+            overflow: hidden;
+            animation: iconGlow 2s ease-in-out infinite alternate;
+        }
+
+        /* Прыжки под музыку */
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+.title-icon.dancing {
+    animation: bounce 0.69s ease-in-out infinite, iconGlow 2s ease-in-out infinite alternate;
+}
+
+        .title-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Пульсирующее свечение */
+        @keyframes iconGlow {
+            from {
+                box-shadow: 
+                    0 0 15px var(--cyan-glow),
+                    inset 0 0 20px rgba(5, 217, 232, 0.1);
+            }
+            to {
+                box-shadow: 
+                    0 0 25px var(--cyan-glow),
+                    0 0 40px var(--cyan-glow),
+                    inset 0 0 20px rgba(5, 217, 232, 0.2);
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Бегущий код -->
+    <div class="matrix-rain" id="matrixRain"></div>
+    
+    <!-- HUD уголки -->
+    <div class="hud-corner top-left"></div>
+    <div class="hud-corner top-right"></div>
+    <div class="hud-corner bottom-left"></div>
+    <div class="hud-corner bottom-right"></div>
+    
+    <!-- Системные надписи -->
+    <div class="system-label top-left">relplica-station-system <span class="status">Online</span></div>
+    <div class="system-label top-right">v0.7.3</div>
+    <div class="system-label bottom-left">Bio-Scanner <span class="status">Active</span></div>
+    <div class="system-label bottom-right">Replica Framework</div>
+    
+    <div class="background-overlay"></div>
+    <div class="tooltip" id="globalTooltip"></div>
+
+    <div class="dance-bg" id="danceBg"></div>
+
+    <div class="title-wrapper">
+        <div class="title-icon" id="titleIcon">
+            <img src="icon.jpg" alt="icon">
+        </div>
+        <h1>replica - build - calculator</h1>
+    </div>
+
+    <!-- Переключатель специализаций -->
+    <div class="spec-selector" id="specSelector">
+        <button class="spec-btn" data-spec="attack" onclick="changeSpec('attack')">
+            <span class="spec-name">Упор в атаку</span>
+            <span class="spec-values">Атака: 18 / Защита: 10</span>
+        </button>
+        <button class="spec-btn active" data-spec="balanced" onclick="changeSpec('balanced')">
+            <span class="spec-name">Баланс</span>
+            <span class="spec-values">Атака: 14 / Защита: 14</span>
+        </button>
+        <button class="spec-btn" data-spec="defense" onclick="changeSpec('defense')">
+            <span class="spec-name">Упор в защиту</span>
+            <span class="spec-values">Атака: 10 / Защита: 18</span>
+        </button>
+    </div>
+    
+    <div class="main-layout">
+        <!-- Боковая панель -->
+        <aside class="sidebar">
+            <div class="stats-panel">
+                <h2>Показатели</h2>
+                
+                <div class="stat-item">
+                    <span class="stat-item-name has-tooltip" data-tooltip="Количество урона, которое может выдержать тело персонажа">ХП Тела</span>
+                    <span class="stat-item-value health" id="statHP">7</span>
+                </div>
+                
+                <div class="stat-item">
+                    <span class="stat-item-name has-tooltip" data-tooltip="Определяет лимит Имплантов и их переносимость">Пси-Потенциал</span>
+                    <span class="stat-item-value psy" id="statPsi">5</span>
+                </div>
+
+                <div class="stat-item">
+                    <span class="stat-item-name has-tooltip" data-tooltip="Максимальный вес снаряжения, которое можно нести">Грузоподъёмность</span>
+                    <span class="stat-item-value armor" id="statCarry">0 / 10</span>
+                </div>
+                
+                <div class="stats-divider"></div>
+                
+                <div class="stat-item">
+                    <span class="stat-item-name has-tooltip" data-tooltip="Определяет дальность перемещения за ход">Скорость</span>
+                    <span class="stat-item-value speed" id="statSpeed">4</span>
+                </div>
+                
+                <div class="stat-item">
+                    <span class="stat-item-name has-tooltip" data-tooltip="Влияет на порядок хода в бою">Инициатива</span>
+                    <span class="stat-item-value initiative" id="statInitiative">3</span>
+                </div>
+                
+                <div class="stats-divider"></div>
+                
+                <div class="stat-item">
+                    <span class="stat-item-name has-tooltip" data-tooltip="Способность замечать что-либо с помощью органов чувств">Восприятие</span>
+                    <span class="stat-item-value perception" id="statPerception">2</span>
+                </div>
+                
+                <div class="stat-item">
+                    <span class="stat-item-name has-tooltip" data-tooltip="Умение оставаться незамеченным">Скрытность</span>
+                    <span class="stat-item-value stealth" id="statStealth">2</span>
+                </div>
+
+                <div class="stats-divider"></div>
+
+                <div class="stat-item">
+                    <span class="stat-item-name has-tooltip" data-tooltip="Запас выносливости для небоевых действий">Стамина</span>
+                    <span class="stat-item-value energy" id="statStamina">20</span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Основной контент -->
+        <main class="main-content">
+            <!-- Атрибуты -->
+            <div class="card">
+                <h2><i class="fas fa-chart-bar"></i> Атрибуты</h2>
+                <div class="info-box">
+                    Основные показатели персонажа
+                </div>
+                <div id="attributesContainer"></div>
+            </div>
+
+            <!-- Защитные навыки -->
+            <div class="card">
+                <h2><i class="fas fa-shield-alt"></i> Защитные навыки
+                    <span class="subtitle">К навыку прибавляется НАИМЕНЬШИЙ из указанных атрибутов</span>
+                </h2>
+                <div id="defenseSkillsContainer"></div>
+            </div>
+
+            <!-- Атакующие навыки -->
+            <div class="card">
+                <h2><i class="fas fa-crosshairs"></i> Атакующие навыки</h2>
+                <div class="attack-section">
+                    <div class="section-label">Тип оружия</div>
+                    <div id="weaponTypeContainer"></div>
+                </div>
+                <div class="attack-section">
+                    <div class="section-label">Стиль боя</div>
+                    <div id="weaponStyleContainer"></div>
+                </div>
+            </div>
+
+            <!-- Дополнительные навыки -->
+            <div class="card">
+                <h2><i class="fas fa-cog"></i> Дополнительные навыки
+                    <span class="subtitle">К навыку прибавляется НАИБОЛЬШИЙ из указанных атрибутов</span>
+                </h2>
+                <div id="extraSkillsContainer"></div>
+            </div>
+
+            <!-- Экспорт -->
+            <div class="card">
+                <h2><i class="fas fa-save"></i> Экспорт билда</h2>
+                <textarea class="export-area" id="exportArea" readonly></textarea>
+                <div class="btn-row">
+                    <button class="btn" onclick="copyBuild()">📋 Копировать</button>
+                    <button class="btn btn-secondary" onclick="resetBuild()">🔄 Сбросить</button>
+                </div>
+            </div>
+        </main>       
+        <!-- Правый сайдбар: Очки -->
+        <aside class="sidebar-right">
+            <div class="points-panel">
+                <h3>Очки</h3>
+                
+                <div class="points-row">
+                    <span class="points-row-label">Атрибуты</span>
+                    <span class="points-row-value" id="pointsAttr">16</span>
+                </div>
+                
+                <div class="points-row">
+                    <span class="points-row-label">Атака</span>
+                    <span class="points-row-value" id="pointsAttack">14</span>
+                </div>
+                
+                <div class="points-row">
+                    <span class="points-row-label">Защита</span>
+                    <span class="points-row-value" id="pointsDefense">14</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+    </div>
+
+        <!-- Музыкальный плеер -->
+    <div class="music-player" id="musicPlayer">
+        <div class="player-content">
+            <div class="track-name" id="trackName">Track 01</div>
+            <div class="player-controls">
+                <button class="player-btn" onclick="prevTrack()">◀◀</button>
+                <button class="player-btn play-btn" id="playBtn" onclick="togglePlay()">▶</button>
+                <button class="player-btn" onclick="nextTrack()">▶▶</button>
+            </div>
+            <div class="volume-control">
+                <span class="volume-icon">🔊</span>
+                <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="30" onchange="setVolume(this.value)">
+                <span class="volume-value" id="volumeValue">30%</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CONFIG = {
+            minValue: 1,
+            maxValue: 4,
+            minPercent: -100,
+            maxPercent: 100,
+            
+            // Очки атрибутов (фиксированные)
+            attributePoints: 16,
+            
+            // Специализации боевых очков
+            specs: {
+                attack: { name: 'Упор в атаку', attack: 18, defense: 10 },
+                balanced: { name: 'Баланс', attack: 14, defense: 14 },
+                defense: { name: 'Упор в защиту', attack: 10, defense: 18 }
+            }
+        };
+
+        // ============== МУЗЫКАЛЬНЫЙ ПЛЕЕР ==============
+        const TRACKS = [
+            { name: 'Track 01', src: 'music/f1.mp3' },
+            { name: 'Track 02', src: 'music/f2.mp3' },
+            { name: 'Track 03', src: 'music/f3.mp3' },
+            { name: 'Track 04', src: 'music/f4.mp3' },
+            { name: 'Track 05', src: 'music/f5.mp3' }
+        ];
+
+        let currentTrack = 0;
+        let isPlaying = false;
+        const audio = new Audio();
+
+        // Атрибуты
+        const ATTRIBUTES = [
+            { id: 'str', name: 'Сила', desc: 'Физическая мощь в силовых аспектах' },
+            { id: 'dex', name: 'Ловкость', desc: 'Гибкость, быстрота, точность тела' },
+            { id: 'gen', name: 'Генетика', desc: 'Качество организма с точки зрения его строения' },
+            { id: 'psy', name: 'Психика', desc: 'Ментальный потенциал, способность концентрировать мозг, усидчивость' },
+            { id: 'cool', name: 'Хладнокровие', desc: 'Самоконтроль, сопротивление панике и давлению со стороны' }
+        ];
+
+        // Защитные навыки
+        const DEFENSE_SKILLS = [
+            { 
+                id: 'dodge', 
+                name: 'Уклонение', 
+                desc: 'Способность избегать атак движением тела',
+                attrs: ['dex', 'str'], // НАИМЕНЬШЕЕ ИЗ
+                attrNames: 'Ловкость / Сила'
+            },
+            { 
+                id: 'parry', 
+                name: 'Парирование', 
+                desc: 'Способность отводить атаки руками и оружием на близкой дистанции',
+                attrs: ['str', 'psy'],
+                attrNames: 'Сила / Психика'
+            },
+            { 
+                id: 'block', 
+                name: 'Блокирование', 
+                desc: 'Способность блокировать атаки с помощью какого-либо снаряжения',
+                attrs: ['cool', 'gen'],
+                attrNames: 'Хладнокровие / Генетика'
+            },
+            { 
+                id: 'endure', 
+                name: 'Выдержка', 
+                desc: 'Способность сопротивляться различным негативным факторам',
+                attrs: ['psy', 'cool'],
+                attrNames: 'Психика / Хладнокровие'
+            }
+        ];
+
+        // Типы оружия (главные)
+            const WEAPON_TYPES = [
+                { id: 'ranged', name: 'Дальнее', desc: 'Опыт и умения с оружием дальнего боя' },
+                { id: 'melee', name: 'Ближнее', desc: 'Опыт и умения с оружием ближнего боя' }
+            ];
+
+            // Стили оружия
+            const WEAPON_STYLES = [
+                { id: 'fierce', name: 'Яростное', desc: 'Агрессивный силовой стиль боя', attr: 'str', attrName: 'Сила' },
+                { id: 'cunning', name: 'Подлое', desc: 'Хитрый и точный стиль боя', attr: 'dex', attrName: 'Ловкость' },
+                { id: 'technical', name: 'Техничное', desc: 'Выверенный технический стиль', attr: 'psy', attrName: 'Психика' },
+                { id: 'bold', name: 'Дерзкое', desc: 'Рискованный бесстрашный стиль', attr: 'cool', attrName: 'Хладнокровие' }
+            ];
+
+            // Дополнительные навыки
+                const EXTRA_SKILLS = [
+                    { 
+                        id: 'technic', 
+                        name: 'Техник', 
+                        desc: 'Умение манипулировать техникой или обслуживать её',
+                        attrs: ['psy', 'dex'],
+                        attrNames: 'Психика / Ловкость'
+                    },
+                    { 
+                        id: 'medic', 
+                        name: 'Врач', 
+                        desc: 'Понимание человеческого тела, биологии, анатомии и умение вмешиваться в их работу',
+                        attrs: ['cool', 'gen'],
+                        attrNames: 'Хладнокровие / Генетика'
+                    }
+                ];
+
+        // ============== СОСТОЯНИЕ ==============
+
+        let attributes = {};
+        let skills = {};
+        let currentSpec = 'balanced';
+        let pointsLeft = {
+            attributes: CONFIG.attributePoints,
+            attack: CONFIG.specs.balanced.attack,
+            defense: CONFIG.specs.balanced.defense
+        };
+
+        function initState() {
+            ATTRIBUTES.forEach(attr => {
+                attributes[attr.id] = { value: 1, percent: 0 };
+            });
+            DEFENSE_SKILLS.forEach(skill => {
+                skills[skill.id] = { value: 1, percent: 0 };
+            });
+            WEAPON_TYPES.forEach(type => {
+                skills[type.id] = { value: 1, percent: 0 };
+            });
+            WEAPON_STYLES.forEach(style => {
+                skills[style.id] = { value: 1, percent: 0 };
+            });
+            EXTRA_SKILLS.forEach(skill => {
+                skills[skill.id] = { value: 1, percent: 0 };
+            });
+            
+            // Сброс очков
+            currentSpec = 'balanced';
+            pointsLeft.attributes = CONFIG.attributePoints;
+            pointsLeft.attack = CONFIG.specs.balanced.attack;
+            pointsLeft.defense = CONFIG.specs.balanced.defense;
+        }
+
+        // ============== ПОИНТБАЙ ==============
+
+        function getCost(field, delta) {
+            if (field === 'value') {
+                return Math.abs(delta) * 4; // +1 = 4 очка
+            } else {
+                return Math.abs(delta) / 25; // +25% = 1 очко
+            }
+        }
+
+        function canAfford(pool, field, delta) {
+            if (delta < 0) return true;
+            const cost = getCost(field, delta);
+            return pointsLeft[pool] >= cost;
+        }
+
+        function spendPoints(pool, field, delta) {
+            const cost = getCost(field, delta);
+            if (delta > 0) {
+                pointsLeft[pool] -= cost;
+            } else {
+                pointsLeft[pool] += cost;
+            }
+        }
+
+        function changeSpec(specId) {
+            if (specId === currentSpec) return;
+            
+            // Сброс всех навыков при смене специализации
+            DEFENSE_SKILLS.forEach(skill => {
+                skills[skill.id] = { value: 1, percent: 0 };
+            });
+            WEAPON_TYPES.forEach(type => {
+                skills[type.id] = { value: 1, percent: 0 };
+            });
+            WEAPON_STYLES.forEach(style => {
+                skills[style.id] = { value: 1, percent: 0 };
+            });
+            
+            // Применяем новую специализацию
+            currentSpec = specId;
+            pointsLeft.attack = CONFIG.specs[specId].attack;
+            pointsLeft.defense = CONFIG.specs[specId].defense;
+            
+            renderSpecSelector();
+            renderSkills();
+            renderWeaponTypes();
+            renderWeaponStyles();
+            renderPointsDisplay();
+            updateExport();
+        }
+
+        function getSkillPool(skillId) {
+            if (DEFENSE_SKILLS.find(s => s.id === skillId)) {
+                return 'defense';
+            }
+            if (WEAPON_TYPES.find(t => t.id === skillId)) {
+                return 'attack';
+            }
+            if (WEAPON_STYLES.find(s => s.id === skillId)) {
+                return 'attack';
+            }
+            return null; // Дополнительные навыки — без пула
+        }
+
+
+
+        // ============== ПОКАЗАТЕЛИ ==============
+
+        // Получить значение атрибута как дробное число
+        function getEffectiveValue(attrId) {
+            const attr = attributes[attrId];
+            return attr.value + (attr.percent / 100);
+        }
+
+        // Расчёт всех показателей
+        function calculateStats() {
+            const str = getEffectiveValue('str');
+            const dex = getEffectiveValue('dex');
+            const gen = getEffectiveValue('gen');
+            const psy = getEffectiveValue('psy');
+            const cool = getEffectiveValue('cool');
+            
+            return {
+                hp: 5 + Math.floor(gen * 2),
+                stamina: Math.floor(gen * 10) + Math.floor(str * 10),
+                psi: Math.floor(psy * 2) + Math.floor(gen) + Math.floor(cool),
+                speed: Math.floor(dex * 2) + Math.floor(gen) + Math.floor(str),
+                initiative: Math.floor(psy) + Math.floor(dex) + Math.floor(gen),
+                carry: Math.floor(str * 5) + Math.floor(gen * 5),
+                perception: Math.floor(cool) + Math.floor(gen),
+                stealth: Math.floor(dex) + Math.floor(gen)
+            };
+        }
+
+        // Отрисовка показателей
+        function renderStats() {
+            const stats = calculateStats();
+            
+            document.getElementById('statHP').textContent = stats.hp;
+            document.getElementById('statStamina').textContent = stats.stamina;
+            document.getElementById('statPsi').textContent = stats.psi;
+            document.getElementById('statSpeed').textContent = stats.speed;
+            document.getElementById('statInitiative').textContent = stats.initiative;
+            document.getElementById('statCarry').textContent = stats.carry;
+            document.getElementById('statPerception').textContent = stats.perception;
+            document.getElementById('statStealth').textContent = stats.stealth;
+        }
+
+        // ============== РЕНДЕР ==============
+
+        function renderAttributes() {
+            const container = document.getElementById('attributesContainer');
+            container.innerHTML = ATTRIBUTES.map(attr => {
+                const data = attributes[attr.id];
+                return `
+                    <div class="stat-row">
+                        <div class="stat-name has-tooltip" data-tooltip="${attr.desc}">
+                            ${attr.name}
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Значение:</span>
+                            <button onclick="changeAttr('${attr.id}', 'value', -1)" 
+                                    ${data.value <= CONFIG.minValue ? 'disabled' : ''}>−</button>
+                            <span class="value-display">${data.value}</span>
+                            <button onclick="changeAttr('${attr.id}', 'value', 1)"
+                                    ${data.value >= CONFIG.maxValue ? 'disabled' : ''}>+</button>
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Проценты:</span>
+                            <button onclick="changeAttr('${attr.id}', 'percent', -25)"
+                                    ${data.percent <= CONFIG.minPercent ? 'disabled' : ''}>−25</button>
+                            <span class="percent-display ${getPercentClass(data.percent)}">${formatPercent(data.percent)}</span>
+                            <button onclick="changeAttr('${attr.id}', 'percent', 25)"
+                                    ${data.percent >= CONFIG.maxPercent ? 'disabled' : ''}>+25</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderSkills() {
+            const container = document.getElementById('defenseSkillsContainer');
+            container.innerHTML = DEFENSE_SKILLS.map(skill => {
+                const data = skills[skill.id];
+                const total = calculateSkillTotal(skill);
+                
+                return `
+                    <div class="skill-row">
+                        <div>
+                            <div class="stat-name has-tooltip" data-tooltip="${skill.desc}">
+                            ${skill.name}
+                        </div>
+                            <div class="skill-formula">+ мин(${skill.attrNames})</div>
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Значение:</span>
+                            <button onclick="changeSkill('${skill.id}', 'value', -1)"
+                                    ${data.value <= CONFIG.minValue ? 'disabled' : ''}>−</button>
+                            <span class="value-display">${data.value}</span>
+                            <button onclick="changeSkill('${skill.id}', 'value', 1)"
+                                    ${data.value >= CONFIG.maxValue ? 'disabled' : ''}>+</button>
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Проценты:</span>
+                            <button onclick="changeSkill('${skill.id}', 'percent', -25)"
+                                    ${data.percent <= CONFIG.minPercent ? 'disabled' : ''}>−25</button>
+                            <span class="percent-display ${getPercentClass(data.percent)}">${formatPercent(data.percent)}</span>
+                            <button onclick="changeSkill('${skill.id}', 'percent', 25)"
+                                    ${data.percent >= CONFIG.maxPercent ? 'disabled' : ''}>+25</button>
+                        </div>
+                        <div class="skill-total">
+                            <div class="total-value">${total.value} <span style="font-size:0.7em">${formatPercent(total.percent)}</span></div>
+                            <div class="total-label">Итого при броске</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderWeaponTypes() {
+            const container = document.getElementById('weaponTypeContainer');
+            container.innerHTML = WEAPON_TYPES.map(type => {
+                const data = skills[type.id];
+                return `
+                    <div class="stat-row">
+                        <div class="stat-name has-tooltip" data-tooltip="${type.desc}">
+                            ${type.name}
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Значение:</span>
+                            <button onclick="changeSkill('${type.id}', 'value', -1)" 
+                                    ${data.value <= CONFIG.minValue ? 'disabled' : ''}>−</button>
+                            <span class="value-display">${data.value}</span>
+                            <button onclick="changeSkill('${type.id}', 'value', 1)"
+                                    ${data.value >= CONFIG.maxValue ? 'disabled' : ''}>+</button>
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Проценты:</span>
+                            <button onclick="changeSkill('${type.id}', 'percent', -25)"
+                                    ${data.percent <= CONFIG.minPercent ? 'disabled' : ''}>−</button>
+                            <span class="percent-display ${getPercentClass(data.percent)}">${formatPercent(data.percent)}</span>
+                            <button onclick="changeSkill('${type.id}', 'percent', 25)"
+                                    ${data.percent >= CONFIG.maxPercent ? 'disabled' : ''}>+</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderWeaponStyles() {
+            const container = document.getElementById('weaponStyleContainer');
+            container.innerHTML = WEAPON_STYLES.map(style => {
+                const data = skills[style.id];
+                const totalRanged = calculateAttackTotal(style, 'ranged');
+                const totalMelee = calculateAttackTotal(style, 'melee');
+                
+                return `
+                    <div class="style-group">
+                        <div class="style-header">
+                            <div class="style-name has-tooltip" data-tooltip="${style.desc}">${style.name}</div>
+                            <div class="style-attr">+ ${style.attrName}</div>
+                        </div>
+                        <div class="style-row">
+                            <div class="value-control">
+                                <span class="label">Значение:</span>
+                                <button onclick="changeSkill('${style.id}', 'value', -1)"
+                                        ${data.value <= CONFIG.minValue ? 'disabled' : ''}>−</button>
+                                <span class="value-display">${data.value}</span>
+                                <button onclick="changeSkill('${style.id}', 'value', 1)"
+                                        ${data.value >= CONFIG.maxValue ? 'disabled' : ''}>+</button>
+                            </div>
+                            <div class="value-control">
+                                <span class="label">Проценты:</span>
+                                <button onclick="changeSkill('${style.id}', 'percent', -25)"
+                                        ${data.percent <= CONFIG.minPercent ? 'disabled' : ''}>−</button>
+                                <span class="percent-display ${getPercentClass(data.percent)}">${formatPercent(data.percent)}</span>
+                                <button onclick="changeSkill('${style.id}', 'percent', 25)"
+                                        ${data.percent >= CONFIG.maxPercent ? 'disabled' : ''}>+</button>
+                            </div>
+                            <div class="style-totals">
+                                <div class="skill-total">
+                                    <div class="total-value">${totalRanged.value} <span style="font-size:0.7em">${formatPercent(totalRanged.percent)}</span></div>
+                                    <div class="total-label">Дальнее</div>
+                                </div>
+                                <div class="skill-total">
+                                    <div class="total-value">${totalMelee.value} <span style="font-size:0.7em">${formatPercent(totalMelee.percent)}</span></div>
+                                    <div class="total-label">Ближнее</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderExtraSkills() {
+            const container = document.getElementById('extraSkillsContainer');
+            container.innerHTML = EXTRA_SKILLS.map(skill => {
+                const data = skills[skill.id];
+                const total = calculateExtraSkillTotal(skill);
+                
+                return `
+                    <div class="skill-row">
+                        <div>
+                            <div class="stat-name has-tooltip" data-tooltip="${skill.desc}">
+                                ${skill.name}
+                            </div>
+                            <div class="skill-formula">+ макс(${skill.attrNames})</div>
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Значение:</span>
+                            <button onclick="changeSkill('${skill.id}', 'value', -1)"
+                                    ${data.value <= CONFIG.minValue ? 'disabled' : ''}>−</button>
+                            <span class="value-display">${data.value}</span>
+                            <button onclick="changeSkill('${skill.id}', 'value', 1)"
+                                    ${data.value >= CONFIG.maxValue ? 'disabled' : ''}>+</button>
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Проценты:</span>
+                            <button onclick="changeSkill('${skill.id}', 'percent', -5)"
+                                    ${data.percent <= CONFIG.minPercent ? 'disabled' : ''}>−</button>
+                            <span class="percent-display ${getPercentClass(data.percent)}">${formatPercent(data.percent)}</span>
+                            <button onclick="changeSkill('${skill.id}', 'percent', 5)"
+                                    ${data.percent >= CONFIG.maxPercent ? 'disabled' : ''}>+</button>
+                        </div>
+                        <div class="skill-total">
+                            <div class="total-value">${total.value} <span style="font-size:0.7em">${formatPercent(total.percent)}</span></div>
+                            <div class="total-label">Итого при броске</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderSubstyles(style) {
+            return WEAPON_TYPES.map(type => {
+                const skillId = style.id + '_' + type.id;
+                const data = skills[skillId];
+                const total = calculateAttackTotal(style, type);
+                
+                return `
+                    <div class="substyle-row">
+                        <div class="substyle-name">
+                            ${style.name} <span>${type.name}</span>
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Значение:</span>
+                            <button onclick="changeSkill('${skillId}', 'value', -1)"
+                                    ${data.value <= CONFIG.minValue ? 'disabled' : ''}>−</button>
+                            <span class="value-display">${data.value}</span>
+                            <button onclick="changeSkill('${skillId}', 'value', 1)"
+                                    ${data.value >= CONFIG.maxValue ? 'disabled' : ''}>+</button>
+                        </div>
+                        <div class="value-control">
+                            <span class="label">Проценты:</span>
+                            <button onclick="changeSkill('${skillId}', 'percent', -5)"
+                                    ${data.percent <= CONFIG.minPercent ? 'disabled' : ''}>−</button>
+                            <span class="percent-display ${getPercentClass(data.percent)}">${formatPercent(data.percent)}</span>
+                            <button onclick="changeSkill('${skillId}', 'percent', 5)"
+                                    ${data.percent >= CONFIG.maxPercent ? 'disabled' : ''}>+</button>
+                        </div>
+                        <div class="skill-total">
+                            <div class="total-value">${total.value} <span style="font-size:0.7em">${formatPercent(total.percent)}</span></div>
+                            <div class="total-label">Итого</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderSpecSelector() {
+            document.querySelectorAll('.spec-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.spec === currentSpec) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function renderPointsDisplay() {
+            const attrEl = document.getElementById('pointsAttr');
+            const attackEl = document.getElementById('pointsAttack');
+            const defenseEl = document.getElementById('pointsDefense');
+            
+            attrEl.textContent = pointsLeft.attributes;
+            attackEl.textContent = pointsLeft.attack;
+            defenseEl.textContent = pointsLeft.defense;
+            
+            // Подсветка
+            [attrEl, attackEl, defenseEl].forEach(el => {
+                const val = parseInt(el.textContent);
+                el.style.color = '';
+                el.style.textShadow = '';
+                
+                if (val <= 2) {
+                    el.style.color = 'var(--accent)';
+                    el.style.textShadow = '0 0 10px var(--accent-glow)';
+                } else if (val <= 5) {
+                    el.style.color = 'var(--yellow)';
+                    el.style.textShadow = '0 0 10px rgba(249, 240, 2, 0.4)';
+                }
+            });
+        }
+
+        function calculateAttackTotal(style, typeId) {
+            const styleSkill = skills[style.id];
+            const typeSkill = skills[typeId];
+            const attr = attributes[style.attr];
+            
+            let totalValue = styleSkill.value + typeSkill.value + attr.value;
+            let totalPercent = styleSkill.percent + typeSkill.percent + attr.percent;
+            
+            while (totalPercent >= 100) {
+                totalPercent -= 100;
+                totalValue += 1;
+            }
+            while (totalPercent <= -100) {
+                totalPercent += 100;
+                totalValue -= 1;
+            }
+            
+            return { value: totalValue, percent: totalPercent };
+        }
+
+        // ============== ЛОГИКА ==============
+
+        function changeAttr(attrId, field, delta) {
+            const data = attributes[attrId];
+            const newVal = data[field] + delta;
+            
+            if (field === 'value') {
+                if (newVal < CONFIG.minValue || newVal > CONFIG.maxValue) return;
+            } else {
+                if (newVal < CONFIG.minPercent || newVal > CONFIG.maxPercent) return;
+            }
+            
+            if (!canAfford('attributes', field, delta)) return;
+            
+            data[field] = newVal;
+            spendPoints('attributes', field, delta);
+            
+            renderAttributes();
+            renderSkills();
+            renderWeaponStyles();
+            renderExtraSkills();
+            renderStats();
+            renderPointsDisplay();
+            updateExport();
+        }
+
+        function changeSkill(skillId, field, delta) {
+            const data = skills[skillId];
+            const newVal = data[field] + delta;
+            
+            if (field === 'value') {
+                if (newVal < CONFIG.minValue || newVal > CONFIG.maxValue) return;
+            } else {
+                if (newVal < CONFIG.minPercent || newVal > CONFIG.maxPercent) return;
+            }
+            
+            const pool = getSkillPool(skillId);
+            
+            // Дополнительные навыки — без ограничений
+            if (pool === null) {
+                data[field] = newVal;
+                renderExtraSkills();
+                updateExport();
+                return;
+            }
+            
+            if (!canAfford(pool, field, delta)) return;
+            
+            data[field] = newVal;
+            spendPoints(pool, field, delta);
+            
+            renderSkills();
+            renderWeaponTypes();
+            renderWeaponStyles();
+            renderPointsDisplay();
+            updateExport();
+        }
+
+        function calculateSkillTotal(skill) {
+            const skillData = skills[skill.id];
+            
+            // Находим наименьший атрибут
+            let minAttr = null;
+            skill.attrs.forEach(attrId => {
+                const attr = attributes[attrId];
+                if (!minAttr || compareAttr(attr, minAttr) < 0) {
+                    minAttr = attr;
+                }
+            });
+            
+            // Складываем значения и проценты
+            let totalValue = skillData.value + minAttr.value;
+            let totalPercent = skillData.percent + minAttr.percent;
+            
+            // Обрабатываем переполнение процентов
+            while (totalPercent >= 100) {
+                totalPercent -= 100;
+                totalValue += 1;
+            }
+            while (totalPercent <= -100) {
+                totalPercent += 100;
+                totalValue -= 1;
+            }
+            
+            return { value: totalValue, percent: totalPercent };
+        }
+
+        // Сравнение атрибутов: сначала по value, потом по percent
+        function compareAttr(a, b) {
+            if (a.value !== b.value) return a.value - b.value;
+            return a.percent - b.percent;
+        }
+
+        function getPercentClass(percent) {
+            if (percent > 0) return 'percent-positive';
+            if (percent < 0) return 'percent-negative';
+            return 'percent-zero';
+        }
+
+        function formatPercent(percent) {
+            if (percent > 0) return `+${percent}%`;
+            if (percent < 0) return `${percent}%`;
+            return '0%';
+        }
+
+        function calculateExtraSkillTotal(skill) {
+    const skillData = skills[skill.id];
+    
+        // Находим НАИБОЛЬШИЙ атрибут
+            let maxAttr = null;
+            skill.attrs.forEach(attrId => {
+                const attr = attributes[attrId];
+                if (!maxAttr || compareAttr(attr, maxAttr) > 0) {
+                    maxAttr = attr;
+                }
+            });
+            
+            let totalValue = skillData.value + maxAttr.value;
+            let totalPercent = skillData.percent + maxAttr.percent;
+            
+            while (totalPercent >= 100) {
+                totalPercent -= 100;
+                totalValue += 1;
+            }
+            while (totalPercent <= -100) {
+                totalPercent += 100;
+                totalValue -= 1;
+            }
+            
+            return { value: totalValue, percent: totalPercent };
+        }
+
+        // ============== ЭКСПОРТ ==============
+
+        function updateExport() {
+            let text = '══════════ БИЛД ПЕРСОНАЖА ══════════\n\n';
+            
+            text += '▸ АТРИБУТЫ:\n';
+            ATTRIBUTES.forEach(attr => {
+                const data = attributes[attr.id];
+                text += `  ${attr.name.padEnd(15)} ${data.value} (${formatPercent(data.percent)})\n`;
+            });
+            
+            text += '\n▸ СПЕЦИАЛИЗАЦИЯ: ' + CONFIG.specs[currentSpec].name + '\n\n';
+
+            text += '\n▸ ЗАЩИТНЫЕ НАВЫКИ:\n';
+            DEFENSE_SKILLS.forEach(skill => {
+                const data = skills[skill.id];
+                const total = calculateSkillTotal(skill);
+                text += `  ${skill.name.padEnd(15)} ${data.value} (${formatPercent(data.percent)})\n`;
+            });
+            
+            text += '\n▸ ТИП ОРУЖИЯ:\n';
+            WEAPON_TYPES.forEach(type => {
+                const data = skills[type.id];
+                text += `  ${type.name.padEnd(15)} ${data.value} (${formatPercent(data.percent)})\n`;
+            });
+            
+            text += '\n▸ СТИЛИ БОЯ:\n';
+            WEAPON_STYLES.forEach(style => {
+                const data = skills[style.id];
+                text += `  ${style.name.padEnd(15)} ${data.value} (${formatPercent(data.percent)})\n`;
+            });
+
+            text += '\n▸ ДОПОЛНИТЕЛЬНЫЕ НАВЫКИ:\n';
+            EXTRA_SKILLS.forEach(skill => {
+                const data = skills[skill.id];
+                const total = calculateExtraSkillTotal(skill);
+                text += `  ${skill.name.padEnd(15)} ${data.value} (${formatPercent(data.percent)})\n`;
+            });
+            
+            document.getElementById('exportArea').value = text;
+        }
+
+        function copyBuild() {
+            const textarea = document.getElementById('exportArea');
+            textarea.select();
+            document.execCommand('copy');
+            alert('Билд скопирован!');
+        }
+
+        function resetBuild() {
+        initState();
+        renderSpecSelector();
+        renderAttributes();
+        renderSkills();
+        renderWeaponTypes();
+        renderWeaponStyles();
+        renderExtraSkills();
+        renderStats();
+        renderPointsDisplay();
+        updateExport();
+        }
+
+        // ============== ЗАПУСК ==============
+
+        initState();
+        renderSpecSelector();
+        renderAttributes();
+        renderSkills();
+        renderWeaponTypes();
+        renderWeaponStyles();
+        renderExtraSkills();
+        renderStats();
+        renderPointsDisplay();
+        updateExport();
+        initPlayer();
+
+        // ============== МУЗЫКАЛЬНЫЙ ПЛЕЕР ==============
+
+        function initPlayer() {
+            audio.volume = 0.3;
+            
+            const randomIndex = Math.floor(Math.random() * TRACKS.length);
+                loadTrack(randomIndex);
+            
+            audio.addEventListener('ended', () => {
+                nextTrack();
+            });
+        }
+
+        function loadTrack(index) {
+            currentTrack = index;
+            audio.src = TRACKS[index].src;
+            document.getElementById('trackName').textContent = TRACKS[index].name;
+        }
+
+        function togglePlay() {
+            const danceBg = document.getElementById('danceBg');
+            const titleIcon = document.getElementById('titleIcon');
+            
+            if (isPlaying) {
+                audio.pause();
+                document.getElementById('playBtn').textContent = '▶';
+                danceBg.classList.remove('playing');
+                titleIcon.classList.remove('dancing');
+            } else {
+                audio.play();
+                document.getElementById('playBtn').textContent = '⏸';
+                danceBg.classList.add('playing');
+                titleIcon.classList.add('dancing');
+            }
+            isPlaying = !isPlaying;
+        }
+
+        function nextTrack() {
+            let next = (currentTrack + 1) % TRACKS.length;
+            loadTrack(next);
+            if (isPlaying) audio.play();
+        }
+
+        function prevTrack() {
+            let prev = (currentTrack - 1 + TRACKS.length) % TRACKS.length;
+            loadTrack(prev);
+            if (isPlaying) audio.play();
+        }
+
+        function setVolume(value) {
+            audio.volume = value / 100;
+            document.getElementById('volumeValue').textContent = value + '%';
+        }
+
+        // Инициализация плеера
+        initPlayer();
+
+        // ============== TOOLTIP ==============
+
+        const globalTooltip = document.getElementById('globalTooltip');
+
+        document.addEventListener('mouseover', function(e) {
+            const trigger = e.target.closest('.has-tooltip');
+            if (!trigger) return;
+            
+            const text = trigger.getAttribute('data-tooltip');
+            if (!text) return;
+            
+            globalTooltip.textContent = text;
+            
+            const rect = trigger.getBoundingClientRect();
+            globalTooltip.style.left = rect.left + (rect.width / 2) + 'px';
+            globalTooltip.style.top = rect.top - 10 + 'px';
+            globalTooltip.style.transform = 'translate(-50%, -100%)';
+            globalTooltip.classList.add('visible');
+        });
+
+        document.addEventListener('mouseout', function(e) {
+            const trigger = e.target.closest('.has-tooltip');
+            if (trigger) {
+                globalTooltip.classList.remove('visible');
+            }
+        });
+
+        // ============== MATRIX RAIN ==============
+
+        function initMatrixRain() {
+            const container = document.getElementById('matrixRain');
+            if (!container) return;
+            
+            const symbols = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF<>{}[]/*-+!@#$%';
+            const columnCount = Math.floor(window.innerWidth / 30);
+            
+            for (let i = 0; i < columnCount; i++) {
+                createColumn(container, symbols, i);
+            }
+        }
+
+        function createColumn(container, symbols, index) {
+            const column = document.createElement('div');
+            column.className = 'matrix-column';
+            column.style.left = (index * 30 + Math.random() * 15) + 'px';
+            column.style.animationDuration = (3 + Math.random() * 8) + 's';
+            column.style.animationDelay = (Math.random() * 5) + 's';
+            
+            // Рандомная прозрачность для глубины
+            column.style.opacity = 0.3 + Math.random() * 0.5;
+            
+            // Рандомный размер шрифта
+            column.style.fontSize = (12 + Math.random() * 6) + 'px';
+            
+            // Иногда другой оттенок
+            const colors = ['#ff2a6d', '#ff0040', '#aa1145', '#ff4477', '#cc2255'];
+            column.style.color = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Генерируем случайную строку символов
+            let text = '';
+            const length = 15 + Math.floor(Math.random() * 35);
+            for (let i = 0; i < length; i++) {
+                text += symbols[Math.floor(Math.random() * symbols.length)];
+            }
+            column.textContent = text;
+            
+            container.appendChild(column);
+            
+            // Периодически обновляем символы с разной частотой
+            const updateInterval = 1500 + Math.random() * 4000;
+            setInterval(() => {
+                let newText = '';
+                const newLength = 15 + Math.floor(Math.random() * 35);
+                for (let i = 0; i < newLength; i++) {
+                    newText += symbols[Math.floor(Math.random() * symbols.length)];
+                }
+                column.textContent = newText;
+                
+                // Иногда меняем цвет
+                if (Math.random() > 0.7) {
+                    column.style.color = colors[Math.floor(Math.random() * colors.length)];
+                }
+            }, updateInterval);
+        }
+
+        initMatrixRain();
+
+        // Пересоздаём при изменении размера окна
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('matrixRain');
+            container.innerHTML = '';
+            initMatrixRain();
+        });
+    </script>
+</body>
+</html>
