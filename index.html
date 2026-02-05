@@ -944,6 +944,39 @@
             margin: 0 auto;
         }
 
+        /* Атрибут в заголовке стиля */
+        .style-attr {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1em;
+            font-weight: 700;
+            color: var(--yellow);
+            text-shadow: 0 0 10px rgba(249, 240, 2, 0.5);
+        }
+
+        /* Формула в итого */
+        .total-label {
+            font-size: 0.65em;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 3px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .total-attr {
+            color: var(--yellow);
+            font-weight: 600;
+            text-shadow: 0 0 5px rgba(249, 240, 2, 0.3);
+        }
+
+        .total-weapon {
+            color: var(--cyan);
+            font-weight: 600;
+            text-shadow: 0 0 5px var(--cyan-glow);
+        }
+
         /* Боковая панель */
         .sidebar {
             position: sticky;
@@ -2065,7 +2098,7 @@
                     <div class="style-group">
                         <div class="style-header">
                             <div class="style-name has-tooltip" data-tooltip="${style.desc}">${style.name}</div>
-                            <div class="style-attr">+ ${style.attrName}</div>
+                            <div class="style-attr">+${style.attrName}</div>
                         </div>
                         <div class="style-row">
                             <div class="value-control">
@@ -2087,11 +2120,17 @@
                             <div class="style-totals">
                                 <div class="skill-total">
                                     <div class="total-value">${totalRanged.value} <span style="font-size:0.7em">${formatPercent(totalRanged.percent)}</span></div>
-                                    <div class="total-label">Дальнее</div>
+                                    <div class="total-label">
+                                        <span class="total-attr">+${style.attrName}</span>
+                                        <span class="total-weapon">+Дальнее</span>
+                                    </div>
                                 </div>
                                 <div class="skill-total">
                                     <div class="total-value">${totalMelee.value} <span style="font-size:0.7em">${formatPercent(totalMelee.percent)}</span></div>
-                                    <div class="total-label">Ближнее</div>
+                                    <div class="total-label">
+                                        <span class="total-attr">+${style.attrName}</span>
+                                        <span class="total-weapon">+Ближнее</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
